@@ -220,6 +220,15 @@ export default function App() {
           placeholder="Sayaç ID girin"
         />
 
+        <label>Hidrant No</label>
+
+        <input
+          type="text"
+          value={sayacId}
+          onChange={(e) => setSayacId(e.target.value)}
+          placeholder="Hidrant No girin"
+        />
+
         <label>Yapılan İş</label>
 
         <select
