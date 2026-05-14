@@ -289,22 +289,7 @@ export default function App() {
         )}
 
         <div className="admin">
-          {!yoneticiModu && (
-            <>
-              <label>Yönetici Şifresi</label>
-              <input
-                type="password"
-                value={sifreInput}
-                onChange={(e) => setSifreInput(e.target.value)}
-                placeholder="Şifre"
-              />
-
-              <button onClick={yoneticiGirisi} className="secondary">
-                Yönetici Girişi
-              </button>
-            </>
-          )}
-
+        
           {yoneticiModu && (
             <>
               <h2>Yönetici Ekranı</h2>
