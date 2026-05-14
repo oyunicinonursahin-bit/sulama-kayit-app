@@ -1,6 +1,6 @@
-import React from "react";
+	import React from "react";
 
-const GOOGLE_SCRIPT_URL = "GOOGLE_SCRIPT_URL_BURAYA";
+const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyp9CyaK3_XYPzOQJ2yA-XIdOMhZaLEGgBCg6ak_qhdClIpF178ZTaxusDQX2oBehUz/exec";
 
 export default function App() {
   const islemListesi = [
