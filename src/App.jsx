@@ -5,6 +5,7 @@ const GOOGLE_SCRIPT_URL = "GOOGLE_SCRIPT_URL_BURAYA";
 export default function App() {
   const islemListesi = [
     "Vana Açma",
+    "Pil Değişimi",
     "Hata 5",
     "Motor Değişimi",
     "Pirinç Vana Değişimi",
@@ -21,13 +22,24 @@ export default function App() {
   const [islem, setIslem] = React.useState(islemListesi[0]);
   const [konum, setKonum] = React.useState(null);
   const [fotograf, setFotograf] = React.useState(null);
+
   const [durum, setDurum] = React.useState("");
   const [hata, setHata] = React.useState(false);
+
   const [kayitlar, setKayitlar] = React.useState([]);
 
+  const [yoneticiModu, setYoneticiModu] = React.useState(false);
+  const [sifreInput, setSifreInput] = React.useState("");
+
+  const YONETICI_SIFRE = "1234";
+
   React.useEffect(() => {
-    const eskiKayitlar = JSON.parse(localStorage.getItem("sahaKayitlari") || "[]");
+    const eskiKayitlar = JSON.parse(
+      localStorage.getItem("sahaKayitlari") || "[]"
+    );
+
     setKayitlar(eskiKayitlar);
+
     konumGetir();
   }, []);
 
@@ -47,12 +59,12 @@ export default function App() {
           lat: position.coords.latitude,
           lng: position.coords.longitude,
         });
+
         setDurum("GPS konumu alındı.");
-        setHata(false);
       },
       () => {
         setKonum(null);
-        setDurum("GPS alınamadı. Tarayıcı konum izni verin.");
+        setDurum("GPS alınamadı. Konum izni verin.");
         setHata(true);
       },
       {
@@ -65,13 +77,13 @@ export default function App() {
 
   const kaydet = async () => {
     if (!personel || !sayacId || !islem) {
-      setDurum("Personel, Sayaç ID ve yapılan iş zorunludur.");
+      setDurum("Tüm alanları doldurun.");
       setHata(true);
       return;
     }
 
     if (!konum) {
-      setDurum("GPS konumu zorunludur. Konum almadan kayıt yapılamaz.");
+      setDurum("GPS konumu zorunludur.");
       setHata(true);
       return;
     }
@@ -86,12 +98,16 @@ export default function App() {
       islem,
       konum: `${konum.lat.toFixed(6)}, ${konum.lng.toFixed(6)}`,
       fotograf: fotograf ? fotograf.name : "Fotoğraf yok",
-      durum: "Beklemede / Gönderildi",
     };
 
     const guncelKayitlar = [yeniKayit, ...kayitlar];
+
     setKayitlar(guncelKayitlar);
-    localStorage.setItem("sahaKayitlari", JSON.stringify(guncelKayitlar));
+
+    localStorage.setItem(
+      "sahaKayitlari",
+      JSON.stringify(guncelKayitlar)
+    );
 
     if (GOOGLE_SCRIPT_URL !== "GOOGLE_SCRIPT_URL_BURAYA") {
       try {
@@ -108,14 +124,35 @@ export default function App() {
       }
     }
 
-    setDurum("Kayıt oluşturuldu. İnternet yoksa cihazda saklanır.");
+    setDurum("Kayıt oluşturuldu.");
     setHata(false);
+
     setSayacId("");
     setFotograf(null);
   };
 
+  const yoneticiGirisi = () => {
+    if (sifreInput === YONETICI_SIFRE) {
+      setYoneticiModu(true);
+      setDurum("Yönetici modu açıldı.");
+      setHata(false);
+    } else {
+      setDurum("Şifre hatalı.");
+      setHata(true);
+    }
+  };
+
   const csvIndir = () => {
-    const basliklar = ["Tarih", "Saat", "Personel", "Sayaç ID", "İşlem", "GPS", "Fotoğraf"];
+    const basliklar = [
+      "Tarih",
+      "Saat",
+      "Personel",
+      "Sayaç ID",
+      "İşlem",
+      "GPS",
+      "Fotoğraf",
+    ];
+
     const satirlar = kayitlar.map((k) => [
       k.tarih,
       k.saat,
@@ -127,30 +164,46 @@ export default function App() {
     ]);
 
     const csv = [basliklar, ...satirlar]
-      .map((row) => row.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(";"))
+      .map((row) =>
+        row
+          .map((cell) => `"${String(cell).replaceAll('"', '""')}"`)
+          .join(";")
+      )
       .join("\n");
 
-    const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8;" });
+    const blob = new Blob(
+      ["\ufeff" + csv],
+      { type: "text/csv;charset=utf-8;" }
+    );
+
     const url = URL.createObjectURL(blob);
+
     const a = document.createElement("a");
+
     a.href = url;
     a.download = "saha-kayitlari.csv";
+
     a.click();
+
     URL.revokeObjectURL(url);
   };
 
   const kayitlariTemizle = () => {
-    if (!confirm("Tüm yerel kayıtlar silinsin mi?")) return;
+    if (!confirm("Tüm kayıtlar silinsin mi?")) return;
+
     localStorage.removeItem("sahaKayitlari");
+
     setKayitlar([]);
   };
 
   return (
     <div className="app">
       <div className="card">
+
         <h1>Sulama Birliği Saha Kayıt</h1>
 
         <label>Personel</label>
+
         <input
           type="text"
           value={personel}
@@ -159,6 +212,7 @@ export default function App() {
         />
 
         <label>Sayaç ID</label>
+
         <input
           type="text"
           value={sayacId}
@@ -167,13 +221,20 @@ export default function App() {
         />
 
         <label>Yapılan İş</label>
-        <select value={islem} onChange={(e) => setIslem(e.target.value)}>
+
+        <select
+          value={islem}
+          onChange={(e) => setIslem(e.target.value)}
+        >
           {islemListesi.map((item) => (
-            <option key={item} value={item}>{item}</option>
+            <option key={item} value={item}>
+              {item}
+            </option>
           ))}
         </select>
 
         <label>Fotoğraf</label>
+
         <input
           type="file"
           accept="image/*"
@@ -182,19 +243,33 @@ export default function App() {
         />
 
         <div className="info">
-          <div><b>Tarih:</b> {new Date().toLocaleDateString("tr-TR")}</div>
-          <div><b>Saat:</b> {new Date().toLocaleTimeString("tr-TR")}</div>
+          <div>
+            <b>Tarih:</b> {new Date().toLocaleDateString("tr-TR")}
+          </div>
+
+          <div>
+            <b>Saat:</b> {new Date().toLocaleTimeString("tr-TR")}
+          </div>
+
           <div>
             <b>GPS:</b>{" "}
-            {konum ? `${konum.lat.toFixed(6)}, ${konum.lng.toFixed(6)}` : "Alınmadı"}
+            {konum
+              ? `${konum.lat.toFixed(6)}, ${konum.lng.toFixed(6)}`
+              : "Alınmadı"}
           </div>
         </div>
 
-        <button onClick={konumGetir} className="secondary">
+        <button
+          onClick={konumGetir}
+          className="secondary"
+        >
           GPS KONUMU YENİLE
         </button>
 
-        <button onClick={kaydet} disabled={!konum}>
+        <button
+          onClick={kaydet}
+          disabled={!konum}
+        >
           ONAYLA
         </button>
 
@@ -205,24 +280,73 @@ export default function App() {
         )}
 
         <div className="admin">
-          <h2>Yönetici Ekranı</h2>
-          <div className="actions">
-            <button onClick={csvIndir} className="secondary">CSV İndir</button>
-            <button onClick={kayitlariTemizle} className="secondary">Temizle</button>
-          </div>
 
-          {kayitlar.length === 0 && <p>Henüz kayıt yok.</p>}
+          {!yoneticiModu && (
+            <>
+              <label>Yönetici Şifresi</label>
 
-          {kayitlar.map((k, index) => (
-            <div className="record" key={index}>
-              <div><b>{k.islem}</b></div>
-              <div>Personel: {k.personel}</div>
-              <div>Sayaç ID: {k.sayacId}</div>
-              <div>{k.tarih} - {k.saat}</div>
-              <div>GPS: {k.konum}</div>
-              <div>Fotoğraf: {k.fotograf}</div>
-            </div>
-          ))}
+              <input
+                type="password"
+                value={sifreInput}
+                onChange={(e) => setSifreInput(e.target.value)}
+                placeholder="Şifre"
+              />
+
+              <button
+                onClick={yoneticiGirisi}
+                className="secondary"
+              >
+                Yönetici Girişi
+              </button>
+            </>
+          )}
+
+          {yoneticiModu && (
+            <>
+              <h2>Yönetici Ekranı</h2>
+
+              <div className="actions">
+                <button
+                  onClick={csvIndir}
+                  className="secondary"
+                >
+                  CSV İndir
+                </button>
+
+                <button
+                  onClick={kayitlariTemizle}
+                  className="secondary"
+                >
+                  Temizle
+                </button>
+              </div>
+
+              {kayitlar.length === 0 && (
+                <p>Henüz kayıt yok.</p>
+              )}
+
+              {kayitlar.map((k, index) => (
+                <div className="record" key={index}>
+                  <div>
+                    <b>{k.islem}</b>
+                  </div>
+
+                  <div>Personel: {k.personel}</div>
+
+                  <div>Sayaç ID: {k.sayacId}</div>
+
+                  <div>
+                    {k.tarih} - {k.saat}
+                  </div>
+
+                  <div>GPS: {k.konum}</div>
+
+                  <div>Fotoğraf: {k.fotograf}</div>
+                </div>
+              ))}
+            </>
+          )}
+
         </div>
       </div>
     </div>
