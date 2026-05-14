@@ -31,7 +31,7 @@ export default function App() {
   const [yoneticiModu, setYoneticiModu] = React.useState(false);
   const [sifreInput, setSifreInput] = React.useState("");
 
-  const YONETICI_SIFRE = "1234";
+  const YONETICI_SIFRE = "1245";
 
   React.useEffect(() => {
     const eskiKayitlar = JSON.parse(
