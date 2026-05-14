@@ -1,6 +1,6 @@
 	import React from "react";
 
-const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwrP6tUHcSSmM7h-vp4Z_ebMrb8WE8xmf-NknMO3CX86ZhvcTPoSqfICDl-NKivNqTb/exec";
+const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz4bQxlc3XhFGzKy66lUJwumhzKp8s-iJPbWk0cHJ6yDLEmvexKrY_ayANFN-PM1ZXG/exec";
 
 export default function App() {
   const islemListesi = [
