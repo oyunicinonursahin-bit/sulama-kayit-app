@@ -1,6 +1,7 @@
-	import React from "react";
+import React from "react";
 
-const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz4bQxlc3XhFGzKy66lUJwumhzKp8s-iJPbWk0cHJ6yDLEmvexKrY_ayANFN-PM1ZXG/exec";
+const GOOGLE_SCRIPT_URL =
+  "https://script.google.com/macros/s/AKfycbz4bQxlc3XhFGzKy66lUJwumhzKp8s-iJPbWk0cHJ6yDLEmvexKrY_ayANFN-PM1ZXG/exec";
 
 export default function App() {
   const islemListesi = [
@@ -15,17 +16,19 @@ export default function App() {
     "Mavi Hortum Değişimi",
     "Kaçak Tespiti",
     "Vana Kapatma",
+    "Tamir",
   ];
 
   const [personel, setPersonel] = React.useState("");
   const [sayacId, setSayacId] = React.useState("");
+  const [hidrantNo, setHidrantNo] = React.useState("");
   const [islem, setIslem] = React.useState(islemListesi[0]);
+  const [aciklama, setAciklama] = React.useState("");
   const [konum, setKonum] = React.useState(null);
   const [fotograf, setFotograf] = React.useState(null);
 
   const [durum, setDurum] = React.useState("");
   const [hata, setHata] = React.useState(false);
-
   const [kayitlar, setKayitlar] = React.useState([]);
 
   const [yoneticiModu, setYoneticiModu] = React.useState(false);
@@ -39,7 +42,6 @@ export default function App() {
     );
 
     setKayitlar(eskiKayitlar);
-
     konumGetir();
   }, []);
 
@@ -61,6 +63,7 @@ export default function App() {
         });
 
         setDurum("GPS konumu alındı.");
+        setHata(false);
       },
       () => {
         setKonum(null);
@@ -76,8 +79,14 @@ export default function App() {
   };
 
   const kaydet = async () => {
-    if (!personel || !sayacId || !islem) {
-      setDurum("Tüm alanları doldurun.");
+    if (!personel || !sayacId || !hidrantNo || !islem) {
+      setDurum("Personel, Sayaç ID, Hidrant No ve yapılan iş zorunludur.");
+      setHata(true);
+      return;
+    }
+
+    if (islem === "Tamir" && !aciklama.trim()) {
+      setDurum("Tamir işlemi için açıklama zorunludur.");
       setHata(true);
       return;
     }
@@ -95,7 +104,9 @@ export default function App() {
       saat: simdi.toLocaleTimeString("tr-TR"),
       personel,
       sayacId,
+      hidrantNo,
       islem,
+      aciklama: islem === "Tamir" ? aciklama : "",
       konum: `${konum.lat.toFixed(6)}, ${konum.lng.toFixed(6)}`,
       fotograf: fotograf ? fotograf.name : "Fotoğraf yok",
     };
@@ -103,31 +114,25 @@ export default function App() {
     const guncelKayitlar = [yeniKayit, ...kayitlar];
 
     setKayitlar(guncelKayitlar);
+    localStorage.setItem("sahaKayitlari", JSON.stringify(guncelKayitlar));
 
-    localStorage.setItem(
-      "sahaKayitlari",
-      JSON.stringify(guncelKayitlar)
-    );
+    try {
+      await fetch(GOOGLE_SCRIPT_URL, {
+        method: "POST",
+        body: JSON.stringify(yeniKayit),
+      });
 
-    if (GOOGLE_SCRIPT_URL !== "GOOGLE_SCRIPT_URL_BURAYA") {
-      try {
-        await fetch(GOOGLE_SCRIPT_URL, {
-          method: "POST",
-          mode: "no-cors",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(yeniKayit),
-        });
-      } catch (error) {
-        console.log("Google Sheets gönderim hatası:", error);
-      }
+      setDurum("Kayıt oluşturuldu ve Google Sheets'e gönderildi.");
+      setHata(false);
+    } catch (error) {
+      console.log("Google Sheets gönderim hatası:", error);
+      setDurum("Kayıt cihazda saklandı. Google Sheets'e gönderilemedi.");
+      setHata(true);
     }
 
-    setDurum("Kayıt oluşturuldu.");
-    setHata(false);
-
     setSayacId("");
+    setHidrantNo("");
+    setAciklama("");
     setFotograf(null);
   };
 
@@ -148,7 +153,9 @@ export default function App() {
       "Saat",
       "Personel",
       "Sayaç ID",
+      "Hidrant No",
       "İşlem",
+      "Açıklama",
       "GPS",
       "Fotoğraf",
     ];
@@ -158,7 +165,9 @@ export default function App() {
       k.saat,
       k.personel,
       k.sayacId,
+      k.hidrantNo,
       k.islem,
+      k.aciklama,
       k.konum,
       k.fotograf,
     ]);
@@ -166,23 +175,20 @@ export default function App() {
     const csv = [basliklar, ...satirlar]
       .map((row) =>
         row
-          .map((cell) => `"${String(cell).replaceAll('"', '""')}"`)
+          .map((cell) => `"${String(cell || "").replaceAll('"', '""')}"`)
           .join(";")
       )
       .join("\n");
 
-    const blob = new Blob(
-      ["\ufeff" + csv],
-      { type: "text/csv;charset=utf-8;" }
-    );
+    const blob = new Blob(["\ufeff" + csv], {
+      type: "text/csv;charset=utf-8;",
+    });
 
     const url = URL.createObjectURL(blob);
-
     const a = document.createElement("a");
 
     a.href = url;
     a.download = "saha-kayitlari.csv";
-
     a.click();
 
     URL.revokeObjectURL(url);
@@ -192,18 +198,15 @@ export default function App() {
     if (!confirm("Tüm kayıtlar silinsin mi?")) return;
 
     localStorage.removeItem("sahaKayitlari");
-
     setKayitlar([]);
   };
 
   return (
     <div className="app">
       <div className="card">
-
         <h1>Sulama Birliği Saha Kayıt</h1>
 
         <label>Personel</label>
-
         <input
           type="text"
           value={personel}
@@ -212,7 +215,6 @@ export default function App() {
         />
 
         <label>Sayaç ID</label>
-
         <input
           type="text"
           value={sayacId}
@@ -221,20 +223,15 @@ export default function App() {
         />
 
         <label>Hidrant No</label>
-
         <input
           type="text"
-          value={sayacId}
-          onChange={(e) => setSayacId(e.target.value)}
+          value={hidrantNo}
+          onChange={(e) => setHidrantNo(e.target.value)}
           placeholder="Hidrant No girin"
         />
 
         <label>Yapılan İş</label>
-
-        <select
-          value={islem}
-          onChange={(e) => setIslem(e.target.value)}
-        >
+        <select value={islem} onChange={(e) => setIslem(e.target.value)}>
           {islemListesi.map((item) => (
             <option key={item} value={item}>
               {item}
@@ -242,8 +239,19 @@ export default function App() {
           ))}
         </select>
 
-        <label>Fotoğraf</label>
+        {islem === "Tamir" && (
+          <>
+            <label>Tamir Açıklaması</label>
+            <textarea
+              value={aciklama}
+              onChange={(e) => setAciklama(e.target.value)}
+              placeholder="Yapılan tamiri açıklayın"
+              rows="4"
+            />
+          </>
+        )}
 
+        <label>Fotoğraf</label>
         <input
           type="file"
           accept="image/*"
@@ -268,32 +276,22 @@ export default function App() {
           </div>
         </div>
 
-        <button
-          onClick={konumGetir}
-          className="secondary"
-        >
+        <button onClick={konumGetir} className="secondary">
           GPS KONUMU YENİLE
         </button>
 
-        <button
-          onClick={kaydet}
-          disabled={!konum}
-        >
+        <button onClick={kaydet} disabled={!konum}>
           ONAYLA
         </button>
 
         {durum && (
-          <div className={hata ? "status error" : "status"}>
-            {durum}
-          </div>
+          <div className={hata ? "status error" : "status"}>{durum}</div>
         )}
 
         <div className="admin">
-
           {!yoneticiModu && (
             <>
               <label>Yönetici Şifresi</label>
-
               <input
                 type="password"
                 value={sifreInput}
@@ -301,10 +299,7 @@ export default function App() {
                 placeholder="Şifre"
               />
 
-              <button
-                onClick={yoneticiGirisi}
-                className="secondary"
-              >
+              <button onClick={yoneticiGirisi} className="secondary">
                 Yönetici Girişi
               </button>
             </>
@@ -315,24 +310,16 @@ export default function App() {
               <h2>Yönetici Ekranı</h2>
 
               <div className="actions">
-                <button
-                  onClick={csvIndir}
-                  className="secondary"
-                >
+                <button onClick={csvIndir} className="secondary">
                   CSV İndir
                 </button>
 
-                <button
-                  onClick={kayitlariTemizle}
-                  className="secondary"
-                >
+                <button onClick={kayitlariTemizle} className="secondary">
                   Temizle
                 </button>
               </div>
 
-              {kayitlar.length === 0 && (
-                <p>Henüz kayıt yok.</p>
-              )}
+              {kayitlar.length === 0 && <p>Henüz kayıt yok.</p>}
 
               {kayitlar.map((k, index) => (
                 <div className="record" key={index}>
@@ -341,21 +328,18 @@ export default function App() {
                   </div>
 
                   <div>Personel: {k.personel}</div>
-
                   <div>Sayaç ID: {k.sayacId}</div>
-
+                  <div>Hidrant No: {k.hidrantNo}</div>
+                  <div>Açıklama: {k.aciklama || "-"}</div>
                   <div>
                     {k.tarih} - {k.saat}
                   </div>
-
                   <div>GPS: {k.konum}</div>
-
                   <div>Fotoğraf: {k.fotograf}</div>
                 </div>
               ))}
             </>
           )}
-
         </div>
       </div>
     </div>
