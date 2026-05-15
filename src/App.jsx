@@ -15,7 +15,7 @@ export default function App() {
   "Kablo/Lehim Yenileme",
   "Mavi Hortum Değişimi",
   "Membran Değişimi",
-  "Plastik Kapak Değişimi",
+  "Plastik Parça Değişimi",
   "Kaçak Tespiti",
   "Vana Kapatma",
   "Tamir",
