@@ -5,19 +5,21 @@ const GOOGLE_SCRIPT_URL =
 
 export default function App() {
   const islemListesi = [
-    "Vana Açma",
-    "Pil Değişimi",
-    "Hata 5",
-    "Motor Değişimi",
-    "Pirinç Vana Değişimi",
-    "Ön Ekran Değişimi",
-    "Arka Ekran Değişimi",
-    "Kablo/Lehim Yenileme",
-    "Mavi Hortum Değişimi",
-    "Kaçak Tespiti",
-    "Vana Kapatma",
-    "Tamir",
-  ];
+  "Vana Açma",
+  "Pil Değişimi",
+  "Hata 5",
+  "Motor Değişimi",
+  "Pirinç/Selenoid Vana Değişimi",
+  "Ön Ekran Değişimi",
+  "Arka Ekran Değişimi",
+  "Kablo/Lehim Yenileme",
+  "Mavi Hortum Değişimi",
+  "Membran Değişimi",
+  "Plastik Kapak Değişimi",
+  "Kaçak Tespiti",
+  "Vana Kapatma",
+  "Tamir",
+];
 
   const [personel, setPersonel] = React.useState("");
   const [sayacId, setSayacId] = React.useState("");
