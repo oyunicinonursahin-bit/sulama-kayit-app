@@ -6,6 +6,7 @@ const GOOGLE_SCRIPT_URL =
 export default function App() {
   const islemListesi = [
   "Vana Açma",
+  "Vana Açma + Pil Değişimi",
   "Pil Değişimi",
   "Hata 5",
   "Motor Değişimi",
