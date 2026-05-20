@@ -16,8 +16,10 @@ export default function App() {
     "Osman İnce",
     "Samet Engür",
     "Samet Öztürk",
+    "Serhan KOYUN",
     "Seyid Ahmet Kıran",
     "Tuğrul Gençay",
+    "Yasin Dursun",
     "Yüksel Aşık",
   ];
 
