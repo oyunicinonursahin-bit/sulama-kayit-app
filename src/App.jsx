@@ -5,22 +5,22 @@ const GOOGLE_SCRIPT_URL =
 
 export default function App() {
   const islemListesi = [
-  "Vana Açma",
-  "Vana Açma + Pil Değişimi",
-  "Pil Değişimi",
-  "Hata 5",
-  "Motor Değişimi",
-  "Pirinç/Selenoid Vana Değişimi",
-  "Ön Ekran Değişimi",
-  "Arka Ekran Değişimi",
-  "Kablo/Lehim Yenileme",
-  "Mavi Hortum Değişimi",
-  "Membran Değişimi",
-  "Plastik Parça Değişimi",
-  "Kaçak Tespiti",
-  "Vana Kapatma",
-  "Tamir",
-];
+    "Vana Açma",
+    "Vana Açma + Pil Değişimi",
+    "Pil Değişimi",
+    "Hata 5",
+    "Motor Değişimi",
+    "Pirinç/Selenoid Vana Değişimi",
+    "Ön Ekran Değişimi",
+    "Arka Ekran Değişimi",
+    "Kablo/Lehim Yenileme",
+    "Mavi Hortum Değişimi",
+    "Membran Değişimi",
+    "Plastik Parça Değişimi",
+    "Kaçak Tespiti",
+    "Vana Kapatma",
+    "Tamir",
+  ];
 
   const [personel, setPersonel] = React.useState("");
   const [sayacId, setSayacId] = React.useState("");
@@ -33,6 +33,7 @@ export default function App() {
   const [durum, setDurum] = React.useState("");
   const [hata, setHata] = React.useState(false);
   const [kayitlar, setKayitlar] = React.useState([]);
+  const [gonderiliyor, setGonderiliyor] = React.useState(false);
 
   const [yoneticiModu, setYoneticiModu] = React.useState(false);
   const [sifreInput, setSifreInput] = React.useState("");
@@ -82,21 +83,28 @@ export default function App() {
   };
 
   const kaydet = async () => {
+    if (gonderiliyor) return;
+
+    setGonderiliyor(true);
+
     if (!personel || !sayacId || !hidrantNo || !islem) {
       setDurum("Personel, Sayaç ID, Hidrant No ve yapılan iş zorunludur.");
       setHata(true);
+      setGonderiliyor(false);
       return;
     }
 
     if (islem === "Tamir" && !aciklama.trim()) {
       setDurum("Tamir işlemi için açıklama zorunludur.");
       setHata(true);
+      setGonderiliyor(false);
       return;
     }
 
     if (!konum) {
       setDurum("GPS konumu zorunludur.");
       setHata(true);
+      setGonderiliyor(false);
       return;
     }
 
@@ -117,6 +125,7 @@ export default function App() {
     const guncelKayitlar = [yeniKayit, ...kayitlar];
 
     setKayitlar(guncelKayitlar);
+
     localStorage.setItem("sahaKayitlari", JSON.stringify(guncelKayitlar));
 
     try {
@@ -129,6 +138,7 @@ export default function App() {
       setHata(false);
     } catch (error) {
       console.log("Google Sheets gönderim hatası:", error);
+
       setDurum("Kayıt cihazda saklandı. Google Sheets'e gönderilemedi.");
       setHata(true);
     }
@@ -137,6 +147,10 @@ export default function App() {
     setHidrantNo("");
     setAciklama("");
     setFotograf(null);
+
+    setTimeout(() => {
+      setGonderiliyor(false);
+    }, 3000);
   };
 
   const yoneticiGirisi = () => {
@@ -283,8 +297,8 @@ export default function App() {
           GPS KONUMU YENİLE
         </button>
 
-        <button onClick={kaydet} disabled={!konum}>
-          ONAYLA
+        <button onClick={kaydet} disabled={!konum || gonderiliyor}>
+          {gonderiliyor ? "KAYDEDİLİYOR..." : "ONAYLA"}
         </button>
 
         {durum && (
@@ -292,7 +306,6 @@ export default function App() {
         )}
 
         <div className="admin">
-        
           {yoneticiModu && (
             <>
               <h2>Yönetici Ekranı</h2>
