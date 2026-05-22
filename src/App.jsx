@@ -4,7 +4,6 @@ const GOOGLE_SCRIPT_URL =
   "https://script.google.com/macros/s/AKfycbxD_LKGCZTpAcC8EUw5Bd3Uy0Q-aFLPY1FAe12-E1W0M1v-if1EAHjTW9SzMn5Tp6vc/exec";
 
 export default function App() {
-
   const personelListesi = [
     "Burak Ateş",
     "Görkem Turan",
@@ -58,34 +57,26 @@ export default function App() {
   const [gonderiliyor, setGonderiliyor] = React.useState(false);
 
   React.useEffect(() => {
-
     const eskiKayitlar = JSON.parse(
       localStorage.getItem("sahaKayitlari") || "[]"
     );
 
     setKayitlar(eskiKayitlar);
-
     konumGetir();
-
   }, []);
 
   const konumGetir = () => {
-
     setDurum("GPS konumu alınıyor...");
     setHata(false);
 
     if (!navigator.geolocation) {
-
-      setDurum("Bu cihaz GPS desteklemiyor.");
-      setHata(true);
-
+      setDurum("Bu cihaz GPS desteklemiyor. Konumsuz kayıt yapılabilir.");
+      setHata(false);
       return;
     }
 
     navigator.geolocation.getCurrentPosition(
-
       (position) => {
-
         setKonum({
           lat: position.coords.latitude,
           lng: position.coords.longitude,
@@ -94,15 +85,11 @@ export default function App() {
         setDurum("GPS konumu alındı.");
         setHata(false);
       },
-
       () => {
-
         setKonum(null);
-
-        setDurum("GPS alınamadı. Konum izni verin.");
-        setHata(true);
+        setDurum("GPS alınamadı. Konumsuz kayıt yapılabilir.");
+        setHata(false);
       },
-
       {
         enableHighAccuracy: true,
         timeout: 15000,
@@ -112,38 +99,21 @@ export default function App() {
   };
 
   const kaydet = async () => {
-
     if (gonderiliyor) return;
 
     setGonderiliyor(true);
 
     if (!personel || !sayacId || !hidrantNo || !islem) {
-
-      setDurum(
-        "Personel, Sayaç ID, Hidrant No ve yapılan iş zorunludur."
-      );
-
+      setDurum("Personel, Sayaç ID, Hidrant No ve yapılan iş zorunludur.");
       setHata(true);
       setGonderiliyor(false);
-
       return;
     }
 
     if (islem === "Tamir" && !aciklama.trim()) {
-
       setDurum("Tamir işlemi için açıklama zorunludur.");
       setHata(true);
       setGonderiliyor(false);
-
-      return;
-    }
-
-    if (!konum) {
-
-      setDurum("GPS konumu zorunludur.");
-      setHata(true);
-      setGonderiliyor(false);
-
       return;
     }
 
@@ -159,7 +129,9 @@ export default function App() {
       hidrantNo,
       islem,
       aciklama: islem === "Tamir" ? aciklama : "",
-      konum: `${konum.lat.toFixed(6)}, ${konum.lng.toFixed(6)}`,
+      konum: konum
+        ? `${konum.lat.toFixed(6)}, ${konum.lng.toFixed(6)}`
+        : "Konum alınamadı",
       fotograf: fotograf ? fotograf.name : "Fotoğraf yok",
     };
 
@@ -167,35 +139,20 @@ export default function App() {
 
     setKayitlar(guncelKayitlar);
 
-    localStorage.setItem(
-      "sahaKayitlari",
-      JSON.stringify(guncelKayitlar)
-    );
+    localStorage.setItem("sahaKayitlari", JSON.stringify(guncelKayitlar));
 
     try {
-
       await fetch(GOOGLE_SCRIPT_URL, {
         method: "POST",
         body: JSON.stringify(yeniKayit),
       });
 
-      setDurum(
-        "Kayıt oluşturuldu ve Google Sheets'e gönderildi."
-      );
-
+      setDurum("Kayıt oluşturuldu ve Google Sheets'e gönderildi.");
       setHata(false);
-
     } catch (error) {
+      console.log("Google Sheets gönderim hatası:", error);
 
-      console.log(
-        "Google Sheets gönderim hatası:",
-        error
-      );
-
-      setDurum(
-        "Kayıt cihazda saklandı. Google Sheets'e gönderilemedi."
-      );
-
+      setDurum("Kayıt cihazda saklandı. Google Sheets'e gönderilemedi.");
       setHata(true);
     }
 
@@ -210,28 +167,18 @@ export default function App() {
   };
 
   return (
-
     <div className="app">
-
       <div className="card">
-
         <h1>Sulama Birliği Saha Kayıt</h1>
 
         <label>Personel</label>
 
-        <select
-          value={personel}
-          onChange={(e) => setPersonel(e.target.value)}
-        >
-
+        <select value={personel} onChange={(e) => setPersonel(e.target.value)}>
           {personelListesi.map((item) => (
-
             <option key={item} value={item}>
               {item}
             </option>
-
           ))}
-
         </select>
 
         <label>Sayaç ID</label>
@@ -254,23 +201,15 @@ export default function App() {
 
         <label>Yapılan İş</label>
 
-        <select
-          value={islem}
-          onChange={(e) => setIslem(e.target.value)}
-        >
-
+        <select value={islem} onChange={(e) => setIslem(e.target.value)}>
           {islemListesi.map((item) => (
-
             <option key={item} value={item}>
               {item}
             </option>
-
           ))}
-
         </select>
 
         {islem === "Tamir" && (
-
           <>
             <label>Tamir Açıklaması</label>
 
@@ -293,59 +232,34 @@ export default function App() {
         />
 
         <div className="info">
-
           <div>
-            <b>Tarih:</b>{" "}
-            {new Date().toLocaleDateString("tr-TR")}
+            <b>Tarih:</b> {new Date().toLocaleDateString("tr-TR")}
           </div>
 
           <div>
-            <b>Saat:</b>{" "}
-            {new Date().toLocaleTimeString("tr-TR")}
+            <b>Saat:</b> {new Date().toLocaleTimeString("tr-TR")}
           </div>
 
           <div>
             <b>GPS:</b>{" "}
-
             {konum
               ? `${konum.lat.toFixed(6)}, ${konum.lng.toFixed(6)}`
-              : "Alınmadı"}
+              : "Alınmadı / konumsuz kayıt yapılabilir"}
           </div>
-
         </div>
 
-        <button
-          onClick={konumGetir}
-          className="secondary"
-        >
+        <button onClick={konumGetir} className="secondary">
           GPS KONUMU YENİLE
         </button>
 
-        <button
-          onClick={kaydet}
-          disabled={!konum || gonderiliyor}
-        >
-
-          {gonderiliyor
-            ? "KAYDEDİLİYOR..."
-            : "ONAYLA"}
-
+        <button onClick={kaydet} disabled={gonderiliyor}>
+          {gonderiliyor ? "KAYDEDİLİYOR..." : "ONAYLA"}
         </button>
 
         {durum && (
-
-          <div className={
-            hata
-              ? "status error"
-              : "status"
-          }>
-            {durum}
-          </div>
-
+          <div className={hata ? "status error" : "status"}>{durum}</div>
         )}
-
       </div>
-
     </div>
   );
 }
